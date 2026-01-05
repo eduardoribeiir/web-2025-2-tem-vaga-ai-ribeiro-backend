@@ -1,402 +1,328 @@
-# 🖥️ Backend - Tem Vaga Aí
+# TemVagaAi - Backend FastAPI
 
-<div align="center">
+Backend da aplicação TemVagaAi desenvolvido com FastAPI, SQLAlchemy e SQLite.
 
-### _API RESTful robusta para gerenciamento de anúncios estudantis_
+## 📋 Pré-requisitos
 
-![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-5.0-000000?logo=express&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-Auth-000000?logo=jsonwebtokens&logoColor=white)
+- Python 3.10 ou superior
+- pip (gerenciador de pacotes Python)
 
-</div>
+## 🚀 Instalação
 
----
-
-## 📋 Sobre
-
-API backend completa construída com **Node.js** e **Express**, oferecendo:
-
-- 🔐 **Autenticação JWT** - Sistema seguro de login/registro
-- 🏠 **CRUD de Anúncios** - Criação, leitura, atualização e exclusão
-- 💾 **Sistema de Rascunhos** - Salve anúncios incompletos antes de publicar
-- ❤️ **Gerenciamento de Favoritos** - Usuários podem marcar vagas favoritas
-- 🗄️ **SQLite Integrado** - Banco de dados leve e sem configuração externa
-- 🏗️ **Arquitetura em Camadas** - Código organizado e manutenível
-
----
-
-## 🛠️ Stack Tecnológico
-
-```javascript
-{
-  "runtime": "Node.js 18+",
-  "framework": "Express 5",
-  "database": "SQLite (better-sqlite3)",
-  "auth": "JWT (jsonwebtoken)",
-  "security": "bcryptjs (hash de senhas)",
-  "env": "dotenv",
-  "dev-tools": "nodemon"
-}
-```
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-backend/
-├── src/
-│   ├── config/
-│   │   ├── db.js          # 🗄️ Configuração SQLite + migrations
-│   │   └── env.js         # ⚙️ Variáveis de ambiente
-│   ├── middleware/
-│   │   ├── auth.js        # 🔒 Validação JWT
-│   │   └── asyncHandler.js # 🛡️ Error handling
-│   ├── modules/
-│   │   ├── ads/           # 🏠 Anúncios (service + routes)
-│   │   ├── auth/          # 🔐 Autenticação
-│   │   ├── favorites/     # ❤️ Favoritos
-│   │   └── users/         # 👤 Usuários
-│   ├── routes/
-│   │   └── index.js       # 🚦 Router principal
-│   ├── utils/
-│   │   ├── httpError.js   # ⚠️ Erros HTTP
-│   │   └── token.js       # 🎟️ Geração JWT
-│   ├── app.js             # 🚀 Express app
-│   └── index.js           # 🎬 Entry point
-├── .env.example           # 📝 Template variáveis de ambiente
-├── package.json
-└── README.md              # 📖 Você está aqui!
-```
-
----
-
-## 🚀 Instalação e Execução
-
-### 1. Clone e entre no diretório
+### 1. Clone o repositório
 
 ```bash
-cd backend
+git clone <url-do-repositorio>
+cd Backend-FastAPI
 ```
 
-### 2. Configure o ambiente
+### 2. Crie um ambiente virtual
 
+**Windows:**
 ```bash
-# Copie o arquivo de exemplo
-cp .env.example .env
+python -m venv venv
+venv\Scripts\activate
+```
 
-# Edite .env e defina:
-# PORT=4000
-# JWT_SECRET=seu-segredo-super-secreto-aqui
-# DB_PATH=./database.sqlite (opcional, padrão já configurado)
+**Linux/Mac:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
 ```
 
 ### 3. Instale as dependências
 
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
-### 4. Execute o servidor
+### 4. Configure as variáveis de ambiente
 
-**Modo Desenvolvimento** (com hot-reload):
+Copie o arquivo `.env.example` para `.env`:
+
 ```bash
-npm run dev
+cp .env.example .env
 ```
 
-**Modo Produção**:
-```bash
-npm start
+Edite o arquivo `.env` e configure:
+
+```env
+DATABASE_URL=sqlite:///./temvagaai.db
+SECRET_KEY=sua-chave-secreta-aqui-mude-em-producao
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
 ```
 
-✅ **Servidor rodando em:** `http://localhost:4000`
-
----
-
-## 🧪 Testando a API
-
-### Health Check
+**⚠️ IMPORTANTE:** Gere uma chave secreta segura para produção:
 
 ```bash
-curl http://localhost:4000/health
-# Resposta: {"status":"ok"}
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### 1. Criar Conta
+### 5. Inicialize o banco de dados
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+python init_db.py
+```
+
+Este comando irá:
+- Criar as tabelas no banco de dados
+- Inserir categorias padrão (Apartamento, Casa, Kitnet, Quarto, Residencial)
+- Criar um usuário de teste (email: `teste@temvagaai.com`, senha: `senha123`)
+- Criar alguns anúncios de exemplo
+
+## ▶️ Executando a aplicação
+
+### Modo desenvolvimento (com auto-reload)
+
+```bash
+uvicorn app.main:app --reload
+```
+
+### Modo produção
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+A API estará disponível em: `http://localhost:8000`
+
+## 📚 Documentação da API
+
+Após iniciar o servidor, acesse:
+
+- **Swagger UI (interativa):** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+- **OpenAPI JSON:** http://localhost:8000/openapi.json
+
+## 🔐 Autenticação
+
+A API utiliza JWT (JSON Web Token) para autenticação. Para acessar rotas protegidas:
+
+### 1. Registrar um usuário
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Maria Silva",
-    "email": "maria@example.com",
-    "password": "senha123"
+    "email": "usuario@example.com",
+    "password": "senha123",
+    "name": "Seu Nome"
   }'
 ```
 
-### 2. Fazer Login
+### 2. Fazer login
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "maria@example.com",
-    "password": "senha123"
-  }'
-
-# Guarde o token retornado!
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=usuario@example.com&password=senha123"
 ```
 
-### 3. Criar Anúncio
+### 3. Usar o token nas requisições
 
 ```bash
-curl -X POST http://localhost:4000/api/ads \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Quarto em República Universitária",
-    "description": "Quarto amplo, próximo à UFC",
-    "seller": "Maria Silva",
-    "location": "Centro",
-    "category": "aluguel",
-    "price": 450,
-    "bedrooms": 1,
-    "bathrooms": 1,
-    "amenities": ["wifi", "ar-condicionado"],
-    "status": "published"
-  }'
+curl -X GET "http://localhost:8000/api/v1/users/me" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
 
-### 4. Listar Anúncios Públicos
+## 📡 Endpoints principais
+
+### Autenticação
+- `POST /api/v1/auth/register` - Registrar novo usuário
+- `POST /api/v1/auth/login` - Login (OAuth2 form)
+- `POST /api/v1/auth/login/json` - Login (JSON)
+- `GET /api/v1/auth/me` - Informações do usuário autenticado
+
+### Usuários
+- `GET /api/v1/users/me` - Perfil do usuário autenticado
+- `PUT /api/v1/users/me` - Atualizar perfil
+- `DELETE /api/v1/users/me` - Deletar conta
+- `GET /api/v1/users/{user_id}` - Informações públicas de um usuário
+
+### Categorias
+- `GET /api/v1/categories` - Listar categorias
+- `GET /api/v1/categories/{id}` - Detalhes da categoria
+- `POST /api/v1/categories` - Criar categoria 🔒
+- `PUT /api/v1/categories/{id}` - Atualizar categoria 🔒
+- `DELETE /api/v1/categories/{id}` - Deletar categoria 🔒
+
+### Anúncios
+- `GET /api/v1/ads` - Listar anúncios (com filtros)
+- `GET /api/v1/ads/{id}` - Detalhes do anúncio
+- `GET /api/v1/ads/me` - Meus anúncios 🔒
+- `POST /api/v1/ads` - Criar anúncio 🔒
+- `PUT /api/v1/ads/{id}` - Atualizar anúncio 🔒
+- `DELETE /api/v1/ads/{id}` - Deletar anúncio 🔒
+
+### Comentários
+- `GET /api/v1/comments/ad/{ad_id}` - Comentários de um anúncio
+- `GET /api/v1/comments/{id}` - Detalhes do comentário
+- `POST /api/v1/comments` - Criar comentário 🔒
+- `PUT /api/v1/comments/{id}` - Atualizar comentário 🔒
+- `DELETE /api/v1/comments/{id}` - Deletar comentário 🔒
+
+### Favoritos
+- `GET /api/v1/favorites` - Meus favoritos 🔒
+- `POST /api/v1/favorites/{ad_id}/toggle` - Adicionar/remover favorito 🔒
+- `DELETE /api/v1/favorites/{ad_id}` - Remover favorito 🔒
+- `GET /api/v1/favorites/check/{ad_id}` - Verificar se está nos favoritos 🔒
+
+🔒 = Requer autenticação
+
+## 🗄️ Modelo de Dados
+
+### User (Usuário)
+- `id`: INTEGER (PK)
+- `email`: VARCHAR (unique)
+- `name`: VARCHAR
+- `hashed_password`: VARCHAR
+- `is_active`: BOOLEAN
+- `created_at`: DATETIME
+
+### Category (Categoria)
+- `id`: INTEGER (PK)
+- `name`: VARCHAR
+- `slug`: VARCHAR (unique)
+- `description`: VARCHAR
+- `created_at`: DATETIME
+
+### Ad (Anúncio)
+- `id`: INTEGER (PK)
+- `user_id`: INTEGER (FK -> User)
+- `category_id`: INTEGER (FK -> Category)
+- `title`: VARCHAR
+- `description`: TEXT
+- `seller`: VARCHAR
+- `location`: VARCHAR
+- `cep`: VARCHAR
+- `price`: FLOAT
+- `bedrooms`: INTEGER
+- `bathrooms`: INTEGER
+- `rules`: JSON
+- `amenities`: JSON
+- `custom_rules`: VARCHAR
+- `custom_amenities`: VARCHAR
+- `images`: JSON
+- `status`: VARCHAR (draft/published)
+- `created_at`: DATETIME
+- `updated_at`: DATETIME
+
+### Comment (Comentário)
+- `id`: INTEGER (PK)
+- `ad_id`: INTEGER (FK -> Ad)
+- `user_id`: INTEGER (FK -> User)
+- `content`: TEXT
+- `rating`: INTEGER (1-5)
+- `created_at`: DATETIME
+- `updated_at`: DATETIME
+
+### Favorites (Favoritos)
+- Tabela de relacionamento N:N entre User e Ad
+- `user_id`: INTEGER (PK, FK -> User)
+- `ad_id`: INTEGER (PK, FK -> Ad)
+- `created_at`: DATETIME
+
+## 🧪 Testes
+
+Para executar os testes (quando implementados):
 
 ```bash
-curl http://localhost:4000/api/ads
+pytest
 ```
 
----
+## 📦 Estrutura do Projeto
 
-## 📡 Documentação da API
-
-### 🔓 Rotas Públicas
-
-#### `GET /health`
-Retorna o status da API.
-
-**Resposta:**
-```json
-{ "status": "ok" }
+```
+Backend-FastAPI/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # Aplicação FastAPI principal
+│   ├── core/                # Configurações core
+│   │   ├── config.py        # Configurações e variáveis de ambiente
+│   │   └── security.py      # Funções de segurança (hash, JWT)
+│   ├── db/                  # Banco de dados
+│   │   ├── database.py      # Configuração SQLAlchemy
+│   │   └── models.py        # Modelos do banco
+│   ├── routers/             # Rotas da API
+│   │   ├── auth.py          # Autenticação
+│   │   ├── users.py         # Usuários
+│   │   ├── categories.py    # Categorias
+│   │   ├── ads.py           # Anúncios
+│   │   ├── comments.py      # Comentários
+│   │   └── favorites.py     # Favoritos
+│   └── schemas/             # Schemas Pydantic (validação)
+│       ├── user.py
+│       ├── category.py
+│       ├── ad.py
+│       ├── comment.py
+│       └── favorite.py
+├── init_db.py               # Script de inicialização do BD
+├── requirements.txt         # Dependências Python
+├── .env.example             # Exemplo de variáveis de ambiente
+├── .gitignore
+└── README.md
 ```
 
-#### `POST /api/auth/register`
-Cria nova conta de usuário.
+## 🛠️ Tecnologias Utilizadas
 
-**Body:**
-```json
-{
-  "name": "string (opcional)",
-  "email": "string (obrigatório)",
-  "password": "string (obrigatório)"
-}
-```
+- **FastAPI** 0.115.0 - Framework web moderno e rápido
+- **Uvicorn** - Servidor ASGI de alta performance
+- **SQLAlchemy** 2.0+ - ORM para Python
+- **Pydantic** 2.0+ - Validação de dados
+- **python-jose[cryptography]** - JWT tokens
+- **passlib[bcrypt]** - Hash de senhas
+- **python-multipart** - Upload de arquivos
+- **SQLite** - Banco de dados
 
-**Resposta:**
-```json
-{
-  "user": { "id": 1, "name": "...", "email": "..." },
-  "token": "eyJhbGciOi..."
-}
-```
+## 🔄 Migrações de Banco (Alembic)
 
-#### `POST /api/auth/login`
-Autentica usuário existente.
+Para usar Alembic para controlar as migrações:
 
-**Body:**
-```json
-{
-  "email": "string",
-  "password": "string"
-}
-```
-
-**Resposta:** _(mesma do register)_
-
-#### `GET /api/ads`
-Lista todos os anúncios **publicados** (status = "published").
-
-**Resposta:**
-```json
-[
-  {
-    "id": 1,
-    "title": "...",
-    "description": "...",
-    "price": 450,
-    "location": "...",
-    "category": "aluguel",
-    "bedrooms": 1,
-    "bathrooms": 1,
-    "amenities": ["wifi"],
-    "images": [],
-    "status": "published"
-  }
-]
-```
-
-#### `GET /api/ads/:id`
-Retorna detalhes de um anúncio específico.
-
----
-
-### 🔒 Rotas Autenticadas
-
-> **Atenção:** Todas as rotas abaixo requerem header `Authorization: Bearer <token>`
-
-#### `POST /api/ads`
-Cria novo anúncio.
-
-**Campos obrigatórios:**
-- `title` (string)
-- `description` (string)
-- `seller` (string)
-- `location` (string)
-- `category` (string: "aluguel", "venda", "serviço", "outro")
-
-**Campos opcionais:**
-- `cep` (string)
-- `price` (number)
-- `bedrooms` (number)
-- `bathrooms` (number)
-- `rules` (array de strings)
-- `amenities` (array de strings)
-- `custom_rules` (string)
-- `custom_amenities` (string)
-- `images` (array de URLs)
-- `status` ("draft" | "published", padrão: "published")
-
-#### `PUT /api/ads/:id`
-Atualiza anúncio existente (apenas do próprio usuário).
-
-**Body:** _(aceita os mesmos campos do POST, todos opcionais)_
-
-#### `DELETE /api/ads/:id`
-Exclui anúncio (apenas do próprio usuário).
-
-#### `GET /api/users/me/ads`
-Lista todos os anúncios do usuário autenticado (incluindo rascunhos).
-
-#### `GET /api/favorites`
-Lista favoritos do usuário autenticado.
-
-#### `POST /api/favorites/:adId/toggle`
-Adiciona ou remove anúncio dos favoritos.
-
-**Resposta:**
-```json
-{ "favorite": true }  // ou false se removeu
-```
-
----
-
-## 🗄️ Banco de Dados
-
-O SQLite cria automaticamente as seguintes tabelas:
-
-### `users`
-| Campo | Tipo | Descrição |
-|-------|------|----------|
-| id | INTEGER | Primary key |
-| name | TEXT | Nome do usuário |
-| email | TEXT | Email (unique) |
-| password_hash | TEXT | Hash bcrypt da senha |
-| created_at | DATETIME | Data de criação |
-
-### `ads`
-| Campo | Tipo | Descrição |
-|-------|------|----------|
-| id | INTEGER | Primary key |
-| user_id | INTEGER | FK → users |
-| title | TEXT | Título do anúncio |
-| description | TEXT | Descrição |
-| seller | TEXT | Nome do anunciante |
-| location | TEXT | Localização |
-| cep | TEXT | CEP |
-| price | REAL | Preço |
-| category | TEXT | Categoria |
-| bedrooms | INTEGER | Nº quartos |
-| bathrooms | INTEGER | Nº banheiros |
-| rules | TEXT | Regras (JSON array) |
-| amenities | TEXT | Comodidades (JSON array) |
-| custom_rules | TEXT | Regras personalizadas |
-| custom_amenities | TEXT | Comodidades personalizadas |
-| images | TEXT | URLs imagens (JSON array) |
-| status | TEXT | "draft" ou "published" |
-| created_at | DATETIME | Data criação |
-| updated_at | DATETIME | Data atualização |
-
-### `favorites`
-| Campo | Tipo | Descrição |
-|-------|------|----------|
-| user_id | INTEGER | FK → users |
-| ad_id | INTEGER | FK → ads |
-| created_at | DATETIME | Data |
-| **PK** | (user_id, ad_id) | Chave composta |
-
----
-
-## 🔒 Segurança
-
-- ✅ Senhas são hasheadas com **bcrypt** (salt rounds: 10)
-- ✅ Tokens JWT expiram em **7 dias**
-- ✅ Middleware de autenticação valida tokens em todas as rotas protegidas
-- ✅ SQLite usa prepared statements (proteção contra SQL injection)
-- ✅ CORS habilitado para integração com frontend
-
----
-
-## 📝 Scripts Disponíveis
+### Instalar Alembic
 
 ```bash
-npm run dev     # Modo desenvolvimento (nodemon com hot-reload)
-npm start       # Modo produção (node puro)
+pip install alembic
 ```
 
----
+### Inicializar Alembic
 
-## 🐛 Troubleshooting
-
-**Erro: "Port 4000 already in use"**
 ```bash
-# Windows
-taskkill /IM node.exe /F
-
-# Linux/Mac
-lsof -ti:4000 | xargs kill -9
+alembic init alembic
 ```
 
-**Erro: "JWT_SECRET not defined"**
-- Verifique se o arquivo `.env` existe e contém `JWT_SECRET=alguma-chave`
+### Configurar alembic.ini
 
-**Banco não cria tabelas**
-- Delete `database.sqlite` e reinicie o servidor
-- As migrations rodam automaticamente no startup
+Edite `alembic/env.py` e `alembic.ini` conforme necessário.
 
----
+### Criar migração
 
-## 🤝 Contribuindo
+```bash
+alembic revision --autogenerate -m "Descrição da migração"
+```
 
-Contribuições são bem-vindas! Antes de abrir um PR:
+### Aplicar migrações
 
-1. Teste localmente com `npm run dev`
-2. Verifique se não quebrou endpoints existentes
-3. Documente novas rotas neste README
+```bash
+alembic upgrade head
+```
 
----
+## 📝 Notas Adicionais
 
-<div align="center">
+- Por padrão, os tokens JWT expiram em 7 dias (10080 minutos)
+- O banco de dados SQLite é criado automaticamente em `temvagaai.db`
+- Em produção, considere usar PostgreSQL ao invés de SQLite
+- Certifique-se de configurar CORS adequadamente para produção
+- Sempre use HTTPS em produção
 
-### Desenvolvido com ☕ e 💻
+## 👥 Contribuindo
 
-**[⬆ Voltar ao topo](#️-backend---tem-vaga-aí)**
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
 
-</div>
+## 📄 Licença
+
+Este projeto é parte do trabalho acadêmico da disciplina de Desenvolvimento Web.

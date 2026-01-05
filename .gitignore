@@ -1,11 +1,29 @@
-node_modules
-npm-debug.log*
-yarn-error.log*
-.DS_Store
-dist
-build
-coverage
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
 .env
-.env.local
-.env.*
-database.sqlite*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
