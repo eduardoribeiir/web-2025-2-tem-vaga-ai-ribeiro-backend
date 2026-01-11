@@ -1,17 +1,21 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+import json
 
 class AdStatus(str, Enum):
     DRAFT = "draft"
     PUBLISHED = "published"
+    RESERVED = "reserved"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 class AdBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=200, description="Título do anúncio")
     description: str = Field(..., min_length=10, description="Descrição do anúncio")
-    seller: str = Field(..., min_length=2, max_length=100, description="Nome do vendedor/anunciante")
-    location: str = Field(..., min_length=2, max_length=200, description="Localização")
+    seller: Optional[str] = Field(None, min_length=2, max_length=100, description="Nome do vendedor/anunciante")
+    location: Optional[str] = Field(None, min_length=2, max_length=200, description="Localização")
     cep: Optional[str] = Field(None, max_length=10, description="CEP")
     price: Optional[float] = Field(None, ge=0, description="Preço")
     category_id: int = Field(..., description="ID da categoria")
@@ -49,6 +53,23 @@ class AdRead(AdBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None  # Data da última publicação/republicação
+    
+    @field_validator('rules', 'amenities', 'images', mode='before')
+    @classmethod
+    def parse_json_field(cls, v):
+        """Converte string JSON em lista"""
+        if v is None:
+            return []
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, TypeError):
+                return []
+        if isinstance(v, list):
+            return v
+        return []
     
     class Config:
         from_attributes = True

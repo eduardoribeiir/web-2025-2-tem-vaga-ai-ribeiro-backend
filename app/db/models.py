@@ -51,8 +51,8 @@ class Ad(Base):
     
     title = Column(String, nullable=False, index=True)
     description = Column(Text, nullable=False)
-    seller = Column(String, nullable=False)
-    location = Column(String, nullable=False, index=True)
+    seller = Column(String, nullable=True)  # Opcional para drafts
+    location = Column(String, nullable=True, index=True)  # Opcional para drafts
     cep = Column(String, nullable=True)
     price = Column(Float, nullable=True)
     
@@ -69,6 +69,7 @@ class Ad(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    published_at = Column(DateTime(timezone=True), nullable=True)  # Data da última publicação
     
     # Relacionamentos
     owner = relationship("User", back_populates="ads")

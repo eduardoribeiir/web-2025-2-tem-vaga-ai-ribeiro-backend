@@ -1,18 +1,31 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from app.core.config import settings
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica se a senha corresponde ao hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Converte strings para bytes
+        password_bytes = plain_password.encode('utf-8')
+        hash_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception as e:
+        print(f"Erro na verificação de senha: {e}")
+        return False
 
 def get_password_hash(password: str) -> str:
     """Gera hash da senha"""
-    return pwd_context.hash(password)
+    try:
+        # Converte para bytes e gera hash
+        password_bytes = password.encode('utf-8')
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
+    except Exception as e:
+        print(f"Erro ao gerar hash: {e}")
+        raise
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Cria token JWT"""

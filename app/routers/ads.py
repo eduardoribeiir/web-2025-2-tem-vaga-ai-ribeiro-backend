@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import json
 from app.db.database import get_db
 from app.db import models
 from app.schemas import ad as schemas
@@ -74,7 +75,24 @@ async def create_ad(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Cria um novo anúncio"""
+    """Cria um novo anúncio
+    
+    Se status = 'published', os campos seller e location são obrigatórios.
+    Para rascunhos (draft), esses campos são opcionais.
+    """
+    # Validação condicional: se for publicar, seller e location são obrigatórios
+    if ad_data.status == schemas.AdStatus.PUBLISHED:
+        if not ad_data.seller:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Campo 'seller' é obrigatório para anúncios publicados"
+            )
+        if not ad_data.location:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Campo 'location' é obrigatório para anúncios publicados"
+            )
+    
     # Verifica se categoria existe
     category = db.query(models.Category).filter(
         models.Category.id == ad_data.category_id
@@ -85,8 +103,16 @@ async def create_ad(
             detail="Categoria não encontrada"
         )
     
-    # Cria anúncio
+    # Converte listas para JSON strings
     ad_dict = ad_data.model_dump()
+    if ad_dict.get('rules'):
+        ad_dict['rules'] = json.dumps(ad_dict['rules'])
+    if ad_dict.get('amenities'):
+        ad_dict['amenities'] = json.dumps(ad_dict['amenities'])
+    if ad_dict.get('images'):
+        ad_dict['images'] = json.dumps(ad_dict['images'])
+    
+    # Cria anúncio
     new_ad = models.Ad(**ad_dict, user_id=current_user.id)
     
     db.add(new_ad)
@@ -130,6 +156,15 @@ async def update_ad(
     
     # Atualiza campos
     update_data = ad_data.model_dump(exclude_unset=True)
+    
+    # Converte listas para JSON strings
+    if 'rules' in update_data and update_data['rules'] is not None:
+        update_data['rules'] = json.dumps(update_data['rules'])
+    if 'amenities' in update_data and update_data['amenities'] is not None:
+        update_data['amenities'] = json.dumps(update_data['amenities'])
+    if 'images' in update_data and update_data['images'] is not None:
+        update_data['images'] = json.dumps(update_data['images'])
+    
     for field, value in update_data.items():
         setattr(ad, field, value)
     
@@ -165,3 +200,60 @@ async def delete_ad(
     db.commit()
     
     return None
+
+@router.patch("/{ad_id}/status", response_model=schemas.AdRead)
+async def update_ad_status(
+    ad_id: int,
+    new_status: schemas.AdStatus,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Atualiza o status de um anúncio.
+    Fluxo: draft → published → reserved → completed
+    Apenas o dono pode mudar o status.
+    """
+    ad = db.query(models.Ad).filter(models.Ad.id == ad_id).first()
+    if not ad:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Anúncio não encontrado"
+        )
+    
+    # Verifica se o usuário é o dono
+    if ad.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para alterar o status deste anúncio"
+        )
+    
+    # Valida transições de status
+    valid_transitions = {
+        "draft": ["published", "cancelled"],
+        "published": ["reserved", "cancelled"],
+        "reserved": ["completed", "published"],
+        "completed": [],
+        "cancelled": ["draft", "published"]
+    }
+    
+    current_status = ad.status
+    if new_status not in valid_transitions.get(current_status, []):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transição de status inválida: {current_status} → {new_status}"
+        )
+    
+    # Atualiza status
+    ad.status = new_status
+    ad.updated_at = datetime.utcnow()
+    
+    # Quando republicar (voltar para published), atualiza a data de publicação
+    # Isso é importante para sistemas de vagas onde o mesmo espaço
+    # fica disponível novamente após alguém se mudar
+    if new_status == "published":
+        ad.published_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(ad)
+    
+    return schemas.AdRead.model_validate(ad)
